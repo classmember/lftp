@@ -21,6 +21,7 @@
 
 #include "modconfig.h"
 
+#include <cstdio>
 #include "trio.h"
 #include <unistd.h>
 #include <errno.h>
@@ -1942,6 +1943,8 @@ CMD(edit)
 
 CMD(shell)
 {
+   fprintf(stdout, "logging goes here\n");
+   fflush(stdout);
    Job *j;
    if(args->count()<=1)
       j=new SysCmdJob(0);
