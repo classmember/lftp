@@ -77,6 +77,7 @@
 #include "PatternSet.h"
 #include "LocalDir.h"
 #include "ConnectionSlot.h"
+#include "logcmd.h"
 
 #include "configmake.h"
 
@@ -93,7 +94,6 @@ CMD(slot); CMD(source); CMD(subsh); CMD(suspend); CMD(tasks); CMD(torrent);
 CMD(user); CMD(ver); CMD(wait); CMD(empty); CMD(notempty); CMD(true);
 CMD(false); CMD(mmv);
 
-#define LOGNAME ".lftplog"
 #define HELP_IN_MODULE "m"
 #define ALIAS_FOR(cmd) cmd_##cmd,0,#cmd
 #define ALIAS_FOR2(a,cmd) cmd_##cmd,0,a
@@ -1951,8 +1951,7 @@ CMD(shell)
       j=new SysCmdJob(0);
    else
    {
-      // get home dir
-      const char *homedir;
+      const char *homedir;  // get home dir
       if ((homedir = getenv("HOME")) == NULL)
           homedir = getpwuid(getuid())->pw_dir;
 
@@ -1962,11 +1961,9 @@ CMD(shell)
       strncat(buffer, "/", sizeof(char));
       strncat(buffer, LOGNAME, sizeof(LOGNAME));
 
-      // set command string "a"
-      xstring_ca a(args->Combine(1));
+      xstring_ca a(args->Combine(1));  // set command string "a"
 
-      // open log file to append command
-      FILE *fp;
+      FILE *fp;  // open log file to append command
       fp = fopen(buffer, "a");
 
       if (fp == NULL) {
@@ -1975,27 +1972,8 @@ CMD(shell)
       }
       else
       {
-	 // log date time stamp
-	 time_t rawtime;
-	 time(&rawtime);
-	 struct tm *info;
-	 info = gmtime(&rawtime);
-	 // fprintf(fp, "[yyyy-mm-dd hh:mm:ss] ");
-	 fprintf(fp, "[%.4d-%.2d-%.2d %.2d:%.2d:%.2d] ",
-	         info->tm_year + 1900,
-		 info->tm_mon + 1,
-		 info->tm_mday,
-		 info->tm_hour % 24,
-		 info->tm_min,
-		 info->tm_sec
-		 );
-	 // log command
-	 fprintf(fp, a);
-	 fprintf(fp, "\n");
-	 fclose(fp);
-
-	 // run job
-	 j=new SysCmdJob(a);
+	 logcmd(fp, a);       // log command
+	 j=new SysCmdJob(a);  // run job
       }
    }
 
