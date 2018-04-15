@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <time.h>
 #include <fcntl.h>
 #include <assert.h>
 #ifdef HAVE_DLFCN_H
@@ -92,6 +93,7 @@ CMD(slot); CMD(source); CMD(subsh); CMD(suspend); CMD(tasks); CMD(torrent);
 CMD(user); CMD(ver); CMD(wait); CMD(empty); CMD(notempty); CMD(true);
 CMD(false); CMD(mmv);
 
+#define LOGNAME ".lftplog"
 #define HELP_IN_MODULE "m"
 #define ALIAS_FOR(cmd) cmd_##cmd,0,#cmd
 #define ALIAS_FOR2(a,cmd) cmd_##cmd,0,a
@@ -1943,16 +1945,60 @@ CMD(edit)
 
 CMD(shell)
 {
-   fprintf(stdout, "logging goes here\n");
-   fflush(stdout);
    Job *j;
+
    if(args->count()<=1)
       j=new SysCmdJob(0);
    else
    {
+      // get home dir
+      const char *homedir;
+      if ((homedir = getenv("HOME")) == NULL)
+          homedir = getpwuid(getuid())->pw_dir;
+
+      // add log file name to home dir path
+      char buffer[4096] = "\0"; // 4096 = PATH_MAX
+      strncat(buffer, homedir, sizeof(buffer));
+      strncat(buffer, "/", sizeof(char));
+      strncat(buffer, LOGNAME, sizeof(LOGNAME));
+
+      // set command string "a"
       xstring_ca a(args->Combine(1));
-      j=new SysCmdJob(a);
+
+      // open log file to append command
+      FILE *fp;
+      fp = fopen(buffer, "a");
+
+      if (fp == NULL) {
+	 printf ("Could not log local command, errno = %d\n", errno);
+	 j=new SysCmdJob(0);
+      }
+      else
+      {
+	 // log date time stamp
+	 time_t rawtime;
+	 time(&rawtime);
+	 struct tm *info;
+	 info = gmtime(&rawtime);
+	 // fprintf(fp, "[yyyy-mm-dd hh:mm:ss] ");
+	 fprintf(fp, "[%.4d-%.2d-%.2d %.2d:%.2d:%.2d] ",
+	         info->tm_year + 1900,
+		 info->tm_mon + 1,
+		 info->tm_mday,
+		 info->tm_hour % 24,
+		 info->tm_min,
+		 info->tm_sec
+		 );
+	 // log command
+	 fprintf(fp, a);
+	 fprintf(fp, "\n");
+	 fclose(fp);
+
+	 // run job
+	 j=new SysCmdJob(a);
+      }
    }
+
    return j;
 }
 

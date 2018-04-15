@@ -332,3 +332,5 @@ limits.h
 /nstrftime.c
 /scratch_buffer.h
 /malloc/
+/stat-time.c
+/stat-time.h
