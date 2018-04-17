@@ -1,6 +1,6 @@
 # LFTP
 ## (hard-wired local command logging patch)
-### Usage
+### Example Usage
 ```sh
 $ lftp 
 lftp :~> !rm -rf ~/dir
